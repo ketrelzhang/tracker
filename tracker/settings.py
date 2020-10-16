@@ -121,7 +121,22 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 
+# ##### sms configuration
+# app_id of tencent cloud
+TENCENT_SMS_APP_ID = 1111111
+# app_key of tencent cloud
+TENCENT_SMS_APP_KEY = '111111111111'
+# signature of tencent cloud
+TENCENT_SMS_SIGN = '1234'
+
+TENCENT_SMS_TEMPLATE = {
+    'register': 743589,
+    'login': 743590,
+    'reset': 743591
+}
+
+
 try:
-    from local_settings import *
+    from .local_settings import *
 except ImportError:
     pass
