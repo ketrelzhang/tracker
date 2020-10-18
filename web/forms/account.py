@@ -1,32 +1,7 @@
-from django.shortcuts import render, HttpResponse
-
-# Create your views here.
-import random
-from utils.tencent.sms import send_sms_single
-from django.conf import settings
 from django import forms
-from app01 import models
+from web import models
 from django.core.validators import RegexValidator
 from django.core.exceptions import ValidationError
-
-
-def send_sms(request):
-    """send message
-        ?tpl = login -->  743590
-        ?tpl = register -->  743589
-        ?tpl = reset  --> 743591
-    """
-    tpl = request.GET.get('tpl')
-    template_id = settings.TENCENT_SMS_TEMPLATE.get(tpl)
-    if not template_id:
-        return HttpResponse('The template does not exist.')
-
-    code = random.randrange(1000, 9999)
-    res = send_sms_single('17317271175', 743589, [code, ])
-    if res['result'] == 0:
-        return HttpResponse('Success')
-    else:
-        return HttpResponse(res['errmsg'])
 
 
 class RegisterModelForm(forms.ModelForm):
@@ -47,8 +22,3 @@ class RegisterModelForm(forms.ModelForm):
         for name, field in self.fields.items():
             field.widget.attrs['class'] = 'form-control'
             field.widget.attrs['placeholder'] = '%s' % (field.label,)
-
-
-def register(request):
-    form = RegisterModelForm()
-    return render(request, 'app01/register.html', {'form': form})
