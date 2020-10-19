@@ -1,5 +1,6 @@
 {% extends 'layout/basic.html' %}
 {% load static %}
+
 {% block title %}Create Account{% endblock %}
 
 {% block css %}
@@ -12,7 +13,7 @@
         <form id="regForm" method="POST" novalidate>
             {% csrf_token %}
             {% for field in form %}
-                {% if field.name == 'code' %}
+                {% if field.name == 'verify_code' %}
                     <div class="form-group">
                         <label for="{{ field.id_for_label }}">{{ field.label }}</label>
                         <div class="row">
@@ -21,7 +22,7 @@
                                 <span class="error-msg"></span>
                             </div>
                             <div class="col-xs-5">
-                                <input id="btnSms" type="button" class="btn btn-default" value="点击获取验证码">
+                                <input id="btnSms" type="button" class="btn btn-default" value="Get verify code">
                             </div>
                         </div>
                     </div>
@@ -36,11 +37,37 @@
 
             <div class="row">
                 <div class="col-xs-3">
-                    <input id="btnSubmit" type="button" class="btn btn-primary" value="注  册"/>
+                    <input id="btnSubmit" type="button" class="btn btn-primary" value="Create Account"/>
                 </div>
             </div>
         </form>
     </div>
 {% endblock %}
 
-{% block js %}{% endblock %}
+{% block js %}
+    <script>
+        $(function () {
+            
+        });
+        /*
+        Click button and get the verify code
+         */
+        function bindClickBtnSms() {
+            $('#btnSms').click(function () {
+                //Get the mobile phone number
+                //Find the ID for mobile_phone and then get the number
+                var mobilePhone = $('#id_mobile_phone').val();
+
+                //Send Ajax request
+                $.ajax({
+                    url: "{% url 'send_sms' %}",
+                    type: "GET",
+                    data: { mobile_phone: mobilePhone, tpl: "register" },
+                    success: function (res) {
+                        console.log(res);
+                    }
+                })
+            })
+        }
+    </script>
+{% endblock %}

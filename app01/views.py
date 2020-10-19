@@ -46,7 +46,7 @@ class RegisterModelForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         for name, field in self.fields.items():
             field.widget.attrs['class'] = 'form-control'
-            field.widget.attrs['placeholder'] = '%s' % (field.label,)
+            field.widget.attrs['placeholder'] = 'Please input %s' % (field.label,)
 
 
 def register(request):

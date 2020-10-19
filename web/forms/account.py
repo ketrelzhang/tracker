@@ -8,8 +8,11 @@ class RegisterModelForm(forms.ModelForm):
 
     mobile_phone = forms.CharField(
         label='Mobile Number', validators=[RegexValidator(r'^(1[3|4|5|6|7|8|9])\d{9}$', 'Wrong number'), ])
+
     password = forms.CharField(label='Password', widget=forms.PasswordInput())
+
     confirm_password = forms.CharField(label='Confirm Password', widget=forms.PasswordInput())
+
     verify_code = forms.CharField(label='Verify Code', widget=forms.TextInput())
 
     class Meta:
@@ -21,4 +24,4 @@ class RegisterModelForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         for name, field in self.fields.items():
             field.widget.attrs['class'] = 'form-control'
-            field.widget.attrs['placeholder'] = '%s' % (field.label,)
+            field.widget.attrs['placeholder'] = 'Please Input %s' % (field.label,)
