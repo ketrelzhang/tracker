@@ -136,7 +136,6 @@ TENCENT_SMS_TEMPLATE = {
     'reset': 743591
 }
 
-
 try:
     from .local_settings import *
 except ImportError:

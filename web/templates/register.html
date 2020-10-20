@@ -5,6 +5,12 @@
 
 {% block css %}
     <link rel="stylesheet" href="{% static 'css/account.css' %}">
+    <style>
+        .error-msg{
+            color: red;
+            position: absolute;
+        }
+    </style>
 {% endblock %}
 
 {% block content %}
@@ -19,7 +25,7 @@
                         <div class="row">
                             <div class="col-xs-7">
                                 {{ field }}
-                                <span class="error-msg"></span>
+                            <span class="error-msg"></span>
                             </div>
                             <div class="col-xs-5">
                                 <input id="btnSms" type="button" class="btn btn-default" value="Get verify code">
@@ -46,14 +52,12 @@
 
 {% block js %}
     <script>
-        $(function () {
-            
-        });
         /*
         Click button and get the verify code
          */
-        function bindClickBtnSms() {
-            $('#btnSms').click(function () {
+        $(function() {
+            $('#btnSms').click(function() {
+                $('.error-msg').empty();
                 //Get the mobile phone number
                 //Find the ID for mobile_phone and then get the number
                 var mobilePhone = $('#id_mobile_phone').val();
@@ -62,12 +66,22 @@
                 $.ajax({
                     url: "{% url 'send_sms' %}",
                     type: "GET",
-                    data: { mobile_phone: mobilePhone, tpl: "register" },
-                    success: function (res) {
-                        console.log(res);
+                    data: {
+                        mobile_phone: mobilePhone,
+                        tpl: "register",
+                    },
+                    dataType: "JSON",
+                    success: function(res) {
+                        if(res.status){
+                            console.log('Send Successfully.')
+                        } else {
+                            $.each(res.error, function (key, value) {
+                                $("#id_" + key).next().text(value[0]);
+                            })
+                        }
                     }
                 })
             })
-        }
+        });
     </script>
 {% endblock %}

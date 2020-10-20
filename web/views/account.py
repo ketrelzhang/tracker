@@ -2,7 +2,9 @@
 account information
 """
 from django.shortcuts import render, HttpResponse
-from web.forms.account import RegisterModelForm
+from web.forms.account import RegisterModelForm, SendSmsForm
+from django.conf import settings
+from django.http import JsonResponse
 
 
 def register(request):
@@ -11,6 +13,10 @@ def register(request):
 
 
 def send_sms(request):
-    print(request.GET)
+    """ Send SMS """
+    form = SendSmsForm(request, data=request.GET)
+    # Check if the phone number is empty or the format is correct
+    if form.is_valid():
+        return JsonResponse({'status': True})
 
-    return HttpResponse("Success")
+    return JsonResponse({'status': False, 'error': form.errors})
