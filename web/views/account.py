@@ -2,14 +2,23 @@
 account information
 """
 from django.shortcuts import render, HttpResponse
+from web import models
 from web.forms.account import RegisterModelForm, SendSmsForm
 from django.conf import settings
 from django.http import JsonResponse
 
 
 def register(request):
-    form = RegisterModelForm()
-    return render(request, 'register.html', {'form': form})
+    if request.method == 'GET':
+        form = RegisterModelForm()
+        return render(request, 'register.html', {'form': form})
+
+    form = RegisterModelForm(data=request.POST)
+    if form.is_valid():
+        # write into DB (password should be encrypted)
+        instance = form.save()
+        return JsonResponse({'status': True, 'data': '/login/'})
+    return JsonResponse({'status': False, 'error': 'form.errors'})
 
 
 def send_sms(request):

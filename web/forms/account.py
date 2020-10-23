@@ -1,11 +1,14 @@
+import random
 from django import forms
-from web import models
 from django.core.validators import RegexValidator
 from django.core.exceptions import ValidationError
 from django.conf import settings
-import random
-from utils.tencent.sms import send_sms_single
+
 from django_redis import get_redis_connection
+
+from web import models
+from utils.tencent.sms import send_sms_single
+from utils import encrypt
 
 
 class RegisterModelForm(forms.ModelForm):
@@ -13,9 +16,25 @@ class RegisterModelForm(forms.ModelForm):
     mobile_phone = forms.CharField(
         label='Mobile Number', validators=[RegexValidator(r'^(1[3|4|5|6|7|8|9])\d{9}$', 'Wrong number'), ])
 
-    password = forms.CharField(label='Password', widget=forms.PasswordInput())
+    password = forms.CharField(
+        label='Password',
+        min_length=8,
+        max_length=64,
+        error_messages={
+            'min_length': "At least 8 characters",
+            'max_length': "At most 64 characters"
+        },
+        widget=forms.PasswordInput())
 
-    confirm_password = forms.CharField(label='Confirm Password', widget=forms.PasswordInput())
+    confirm_password = forms.CharField(
+        label='Confirm Password',
+        min_length=8,
+        max_length=64,
+        error_messages={
+            'min_length': "At least 8 characters",
+            'max_length': "At most 64 characters"
+        },
+        widget=forms.PasswordInput())
 
     verify_code = forms.CharField(label='Verify Code', widget=forms.TextInput())
 
@@ -28,7 +47,57 @@ class RegisterModelForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         for name, field in self.fields.items():
             field.widget.attrs['class'] = 'form-control'
-            field.widget.attrs['placeholder'] = 'Please Input %s' % (field.label,)
+            field.widget.attrs['placeholder'] = '%s' % (field.label,)
+
+    def clean_username(self):
+        username = self.cleaned_data['username']
+        exists = models.UserInfo.objects.filter(username=username).exists()
+        if exists:
+            raise ValidationError('The username is already existed.')
+        return username
+
+    def clean_email(self):
+        email = self.cleaned_data['email']
+        exists = models.UserInfo.objects.filter(email=email).exists()
+        if exists:
+            raise ValidationError('The email is already existed.')
+        return email
+
+    def clean_password(self):
+        pwd = self.cleaned_data['password']
+        # encrypt password
+        return encrypt.md5(pwd)
+
+    def clean_confirm_password(self):
+        pwd = self.cleaned_data.get('password')
+        confirm_pwd = encrypt.md5(self.cleaned_data['confirm_password'])
+        if pwd != confirm_pwd:
+            raise ValidationError('The two passwords do not match.')
+        return confirm_pwd
+
+    def clean_mobile_phone(self):
+        mobile_phone = self.cleaned_data['mobile_phone']
+        exists = models.UserInfo.objects.filter(mobile_phone='mobile_phone').exists()
+        if exists:
+            raise ValidationError('The number is already registered.')
+        return mobile_phone
+
+    def clean_verify_code(self):
+        verify_code = self.cleaned_data['verify_code']
+
+        mobile_phone = self.cleaned_data.get('mobile_phone')
+        if not mobile_phone:
+            return verify_code
+
+        conn = get_redis_connection()
+        redis_code = conn.get(mobile_phone)
+        if not redis_code:
+            raise ValidationError('The code is invalid, please retry.')
+
+        redis_str_code = redis_code.decode('utf-8')
+        if verify_code.strip() != redis_str_code:
+            raise ValidationError('The verification code is wrong.')
+        return verify_code
 
 
 class SendSmsForm(forms.Form):

@@ -28,7 +28,7 @@
                             <span class="error-msg"></span>
                             </div>
                             <div class="col-xs-5">
-                                <input id="btnSms" type="button" class="btn btn-default" value="Get verify code">
+                                <input id="btnSms" type="button" class="btn btn-default" value="Get verification code">
                             </div>
                         </div>
                     </div>
@@ -52,10 +52,39 @@
 
 {% block js %}
     <script>
+        $(function () {
+           bindClickBtnSms();
+           bindClickSubmit();
+        });
+
+        /*
+        Submit and Register
+        */
+        function bindClickSubmit() {
+            $('#btnSubmit').click(function () {
+                $('.error-msg').empty();
+                $.ajax({
+                    url: "{% url 'register' %}",
+                    type: "POST",
+                    data: $('#regForm').serialize(), // csrf token
+                    dataType: "JSON",
+                    success: function (res) {
+                        if(res.status){
+                            location.href = res.data;
+                        }else{
+                            $.each(res.error, function (key, value) {
+                                $("#id_" + key).next().text(value[0]);
+                            })
+                        }
+                    }
+                })
+            })
+        }
+
         /*
         Click button and get the verify code
          */
-        $(function() {
+        function bindClickBtnSms() {
             $('#btnSms').click(function() {
                 $('.error-msg').empty();
                 //Get the mobile phone number
@@ -73,7 +102,7 @@
                     dataType: "JSON",
                     success: function(res) {
                         if(res.status){
-                            console.log('Send Successfully.')
+                            sendSmsRemind();
                         } else {
                             $.each(res.error, function (key, value) {
                                 $("#id_" + key).next().text(value[0]);
@@ -82,6 +111,23 @@
                     }
                 })
             })
-        });
+        }
+        /*
+        Count Down for resending verify code
+         */
+        function sendSmsRemind() {
+            var $smsBtn = $('#btnSms');
+            $smsBtn.prop('disabled', true);
+            var time = 60;
+            var remind = setInterval(function () {
+                $smsBtn.val(time + 's remaining');
+                time = time - 1;
+                if (time < 1) {
+                    clearInterval(remind);
+                    $smsBtn.val('Get verify code').prop('disabled', false);
+                }
+            }, 1000)
+        }
+
     </script>
 {% endblock %}
