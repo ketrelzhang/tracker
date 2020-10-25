@@ -1,7 +1,7 @@
 {% extends 'layout/basic.html' %}
 {% load static %}
 
-{% block title %}Create Account{% endblock %}
+{% block title %}Message Login{% endblock %}
 
 {% block css %}
     <link rel="stylesheet" href="{% static 'css/account.css' %}">
@@ -9,14 +9,15 @@
         .error-msg{
             color: red;
             position: absolute;
+            font-size: 13px;
         }
     </style>
 {% endblock %}
 
 {% block content %}
     <div class="account">
-        <div class="title">Create Account</div>
-        <form id="regForm" method="POST" novalidate>
+        <div class="title">Message Login</div>
+        <form id="smsForm" method="POST" novalidate>
             {% csrf_token %}
             {% for field in form %}
                 {% if field.name == 'verify_code' %}
@@ -28,7 +29,7 @@
                             <span class="error-msg"></span>
                             </div>
                             <div class="col-xs-5">
-                                <input id="btnSms" type="button" class="btn btn-default" value="Verification code">
+                                <input id="btnSms" type="button" class="btn btn-default" value="Get verification code">
                             </div>
                         </div>
                     </div>
@@ -43,7 +44,7 @@
 
             <div class="row">
                 <div class="col-xs-3">
-                    <input id="btnSubmit" type="button" class="btn btn-primary" value="Create Account"/>
+                    <input id="btnLogin" type="button" class="btn btn-primary" value="Login"/>
                 </div>
             </div>
         </form>
@@ -56,17 +57,16 @@
            bindClickBtnSms();
            bindClickSubmit();
         });
-
         /*
-        Submit and Register
-        */
+        Login function
+         */
         function bindClickSubmit() {
-            $('#btnSubmit').click(function () {
+            $('#btnLogin').click(function () {
                 $('.error-msg').empty();
                 $.ajax({
-                    url: "{% url 'register' %}",
+                    url: "{% url 'login_sms' %}",
                     type: "POST",
-                    data: $('#regForm').serialize(), // csrf token
+                    data: $('#smsForm').serialize(), // csrf token
                     dataType: "JSON",
                     success: function (res) {
                         if(res.status){
@@ -80,7 +80,6 @@
                 })
             })
         }
-
         /*
         Click button and get the verify code
          */
@@ -97,7 +96,7 @@
                     type: "GET",
                     data: {
                         mobile_phone: mobilePhone,
-                        tpl: "register",
+                        tpl: "login",
                     },
                     dataType: "JSON",
                     success: function(res) {
@@ -112,9 +111,7 @@
                 })
             })
         }
-        /*
-        Count Down for resending verify code
-         */
+
         function sendSmsRemind() {
             var $smsBtn = $('#btnSms');
             $smsBtn.prop('disabled', true);
@@ -128,7 +125,5 @@
                 }
             }, 1000)
         }
-
-
     </script>
 {% endblock %}

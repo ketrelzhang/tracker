@@ -5,14 +5,13 @@ from django.core.exceptions import ValidationError
 from django.conf import settings
 
 from django_redis import get_redis_connection
-
+from web.forms.bootstrap import BootStrapForm
 from web import models
 from utils.tencent.sms import send_sms_single
 from utils import encrypt
 
 
-class RegisterModelForm(forms.ModelForm):
-
+class RegisterModelForm(BootStrapForm, forms.ModelForm):
     mobile_phone = forms.CharField(
         label='Mobile Number', validators=[RegexValidator(r'^(1[3|4|5|6|7|8|9])\d{9}$', 'Wrong number'), ])
 
@@ -41,13 +40,6 @@ class RegisterModelForm(forms.ModelForm):
     class Meta:
         model = models.UserInfo
         fields = ['username', 'email', 'password', 'confirm_password', 'mobile_phone', 'verify_code']
-
-    # control input form style
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        for name, field in self.fields.items():
-            field.widget.attrs['class'] = 'form-control'
-            field.widget.attrs['placeholder'] = '%s' % (field.label,)
 
     def clean_username(self):
         username = self.cleaned_data['username']
@@ -121,7 +113,7 @@ class SendSmsForm(forms.Form):
         exists = models.UserInfo.objects.filter(mobile_phone=mobile_phone).exists()
         if tpl == 'login':
             if not exists:
-                raise ValidationError('The number can by used.')
+                raise ValidationError('The number is not existed.')
         else:
             # Check if the phone is already existed
             if exists:
@@ -139,3 +131,37 @@ class SendSmsForm(forms.Form):
         conn.set(mobile_phone, code, ex=60)
 
         return mobile_phone
+
+
+class LoginSMSForm(BootStrapForm, forms.Form):
+    mobile_phone = forms.CharField(
+        label='Mobile Number', validators=[RegexValidator(r'^(1[3|4|5|6|7|8|9])\d{9}$', 'Wrong number'), ])
+
+    verify_code = forms.CharField(label='Verify Code', widget=forms.TextInput())
+
+    def clean_mobile_phone(self):
+        mobile_phone = self.cleaned_data['mobile_phone']
+        exists = models.UserInfo.objects.filter(mobile_phone=mobile_phone).first()
+        if not exists:
+            raise ValidationError('The number is not existed.')
+        return mobile_phone
+
+    def clean_verify_code(self):
+        verify_code = self.cleaned_data['verify_code']
+        mobile_phone = self.cleaned_data.get('mobile_phone')
+        # Do not need to check verify code if the phone number is not existed.
+        if not mobile_phone:
+            return verify_code
+
+        conn = get_redis_connection()
+        redis_code = conn.get(mobile_phone)
+        if not redis_code:
+            raise ValidationError('The code is invalid, please retry.')
+
+        redis_str_code = redis_code.decode('utf-8')
+        if verify_code.strip() != redis_str_code:
+            raise ValidationError('The verification code is wrong.')
+        return verify_code
+
+
+
